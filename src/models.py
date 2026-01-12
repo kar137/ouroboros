@@ -74,3 +74,104 @@ def count_parameters(model: nn.Module) -> int:
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
+# Print layer-wise output shapes and total parameter count.
+def model_summary(model: nn.Module, input_shape: Tuple[int, int, int, int]) -> None:
+    """
+    Args:
+        model: PyTorch model to summarize
+        input_shape: Input tensor shape (N, C, H, W)
+    """
+    print(f"\n{'='*70}")
+    print(f"Model Summary - Input Shape: {input_shape}")
+    print(f"{'='*70}\n")
+    
+    # Create dummy input
+    device = next(model.parameters()).device
+    x = torch.randn(input_shape).to(device)
+    
+    # Set model to eval mode for summary
+    model.eval()
+    
+    # Hook to capture intermediate outputs
+    activations = {}
+    
+    def get_activation(name):
+        def hook(module, input, output):
+            activations[name] = output.shape
+        return hook
+    
+    # Register hooks for all layers
+    hooks = []
+    for name, layer in model.named_modules():
+        if len(list(layer.children())) == 0:  # Only leaf modules
+            hooks.append(layer.register_forward_hook(get_activation(name)))
+    
+    # Forward pass
+    with torch.no_grad():
+        output = model(x)
+    
+    # Remove hooks
+    for hook in hooks:
+        hook.remove()
+    
+    # Print layer information
+    print(f"{'Layer Name':<30} {'Output Shape':<30}")
+    print(f"{'-'*60}")
+    for name, shape in activations.items():
+        if name:     # Skip empty names
+            print(f"{name:<30} {str(tuple(shape)):<30}")
+    
+    print(f"\n{'='*70}")
+    print(f"Output Shape: {tuple(output.shape)}")
+    print(f"Total Parameters: {count_parameters(model):,}")
+    print(f"{'='*70}\n")
+
+
+# Verification logic for multi-dataset compatibility.
+if __name__ == "__main__":
+    
+    print("\n" + "="*70)
+    print("CNN3Layer Architecture Verification")
+    print("="*70)
+    
+    # Test 1: CIFAR-10 (RGB, 32×32)
+    print("\n[Test 1] CIFAR-10 Configuration")
+    print("-" * 70)
+    model_cifar = CNN3Layer(num_classes=10, in_channels=3)
+    dummy_cifar = torch.randn(1, 3, 32, 32)
+    
+    output_cifar = model_cifar(dummy_cifar)
+    param_count_cifar = count_parameters(model_cifar)
+    
+    print(f"Input Shape:      {tuple(dummy_cifar.shape)}")
+    print(f"Output Shape:      {tuple(output_cifar.shape)}")
+    print(f"Parameter Count:  {param_count_cifar:,}")
+    print(f"Target Range:     47,500 - 52,500 parameters")
+    print(f"Status:           {'✓ PASS' if 47500 <= param_count_cifar <= 52500 else '✗ FAIL'}")
+    
+    # Test 2: Fashion-MNIST (Grayscale, 28×28)
+    print("\n[Test 2] Fashion-MNIST Configuration")
+    print("-" * 70)
+    model_fmnist = CNN3Layer(num_classes=10, in_channels=1)
+    dummy_fmnist = torch.randn(1, 1, 28, 28)
+    
+    output_fmnist = model_fmnist(dummy_fmnist)
+    param_count_fmnist = count_parameters(model_fmnist)
+    
+    print(f"Input Shape:      {tuple(dummy_fmnist.shape)}")
+    print(f"Output Shape:     {tuple(output_fmnist.shape)}")
+    print(f"Parameter Count:  {param_count_fmnist:,}")
+    print(f"Target Range:     47,500 - 52,500 parameters")
+    print(f"Status:           {'✓ PASS' if 47500 <= param_count_fmnist <= 52500 else '✗ FAIL'}")
+    
+    # Detailed architecture summary for CIFAR-10
+    print("\n[Detailed Summary] CIFAR-10 Model")
+    model_summary(model_cifar, (1, 3, 32, 32))
+    
+    # Detailed architecture summary for Fashion-MNIST
+    print("\n[Detailed Summary] Fashion-MNIST Model")
+    model_summary(model_fmnist, (1, 1, 28, 28))
+    
+    print("\n" + "="*70)
+    print("Verification Complete")
+    print("="*70 + "\n")
