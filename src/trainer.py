@@ -2,7 +2,7 @@
 
 import time
 from contextlib import nullcontext
-from typing import Any, Dict, Optional, Union
+from typing import Any, Callable, Dict, Optional, Union
 
 import torch
 from torch import nn
@@ -75,6 +75,8 @@ def train_epoch(
     amp_enabled: bool = False,
     use_compile: bool = False,
     collect_timing: bool = False,
+    collect_grad_stats: bool = False,
+    grad_stats_fn: Optional[Callable[[nn.Module], Dict[str, float]]] = None,
 ) -> Dict[str, float]:
 
     gradient_accumulation_steps = max(1, int(gradient_accumulation_steps))
@@ -88,6 +90,8 @@ def train_epoch(
     running_loss = 0.0
     running_correct = 0
     total_samples = 0
+    grad_stats: Optional[Dict[str, float]] = None
+    dataloader_len = len(dataloader)
 
     # Prepare AMP contexts.
     amp_active = amp_enabled and device.type == "cuda"
@@ -102,6 +106,8 @@ def train_epoch(
     for step_idx, (inputs, targets) in enumerate(dataloader):
         inputs = inputs.to(device, non_blocking=True)
         targets = targets.to(device, non_blocking=True)
+
+        is_last_batch = (step_idx + 1) == dataloader_len
 
         with autocast_ctx():
             outputs = model(inputs)
@@ -129,6 +135,15 @@ def train_epoch(
             else:
                 optimizer.step()
 
+            if collect_grad_stats and is_last_batch:
+                if grad_stats_fn is None:
+                    try:
+                        from src.metrics import compute_gradient_stats  # type: ignore
+                    except Exception:
+                        from metrics import compute_gradient_stats  # type: ignore
+                    grad_stats_fn = compute_gradient_stats
+                grad_stats = grad_stats_fn(model)
+
             optimizer.zero_grad(set_to_none=True)
 
             if scheduler is not None:
@@ -142,6 +157,15 @@ def train_epoch(
         else:
             optimizer.step()
 
+        if collect_grad_stats:
+            if grad_stats_fn is None:
+                try:
+                    from src.metrics import compute_gradient_stats  # type: ignore
+                except Exception:
+                    from metrics import compute_gradient_stats  # type: ignore
+                grad_stats_fn = compute_gradient_stats
+            grad_stats = grad_stats_fn(model)
+
         optimizer.zero_grad(set_to_none=True)
 
         if scheduler is not None:
@@ -151,6 +175,9 @@ def train_epoch(
     avg_acc = running_correct / float(total_samples) if total_samples > 0 else 0.0
 
     metrics = {"loss": avg_loss, "accuracy": avg_acc}
+
+    if grad_stats is not None:
+        metrics["gradients"] = grad_stats
 
     if collect_timing and start_time is not None:
         elapsed = time.perf_counter() - start_time
