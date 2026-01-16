@@ -159,3 +159,84 @@ def train_epoch(
 
     return metrics
 
+
+# Run one validation epoch without gradient updates.
+def validate_epoch(
+    model: nn.Module,
+    dataloader: DataLoader,
+    criterion: nn.Module,
+    device: torch.device,
+) -> Dict[str, float]:
+
+    model.eval()
+
+    running_loss = 0.0
+    running_correct = 0
+    total_samples = 0
+
+    with torch.no_grad():
+        for inputs, targets in dataloader:
+            inputs = inputs.to(device, non_blocking=True)
+            targets = targets.to(device, non_blocking=True)
+
+            outputs = model(inputs)
+            loss = criterion(outputs, targets)
+
+            batch_size = targets.size(0)
+            running_loss += loss.item() * batch_size
+            running_correct += (outputs.argmax(dim=1) == targets).sum().item()
+            total_samples += batch_size
+
+    avg_loss = running_loss / float(total_samples) if total_samples > 0 else 0.0
+    avg_acc = running_correct / float(total_samples) if total_samples > 0 else 0.0
+
+    return {"loss": avg_loss, "accuracy": avg_acc}
+
+# Persist training state to disk.
+def save_checkpoint(
+    path: str,
+    model: nn.Module,
+    optimizer: Optimizer,
+    epoch: int,
+    metrics: Dict[str, float],
+    scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
+    scaler: Optional[torch.cuda.amp.GradScaler] = None,
+) -> None:
+
+    state = {
+        "epoch": epoch,
+        "model_state": model.state_dict(),
+        "optimizer_state": optimizer.state_dict(),
+        "metrics": metrics,
+    }
+
+    if scheduler is not None:
+        state["scheduler_state"] = scheduler.state_dict()
+    if scaler is not None:
+        state["scaler_state"] = scaler.state_dict()
+    torch.save(state, path)
+
+
+# Load checkpoint and restore model/optimizer state.
+def load_checkpoint(
+    path: str,
+    model: nn.Module,
+    optimizer: Optional[Optimizer] = None,
+    scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
+    scaler: Optional[torch.cuda.amp.GradScaler] = None,
+    map_location: Optional[Union[str, torch.device]] = None,
+) -> Dict[str, Any]:
+
+    checkpoint = torch.load(path, map_location=map_location)
+    model.load_state_dict(checkpoint["model_state"])
+
+    if optimizer is not None and "optimizer_state" in checkpoint:
+        optimizer.load_state_dict(checkpoint["optimizer_state"])
+
+    if scheduler is not None and "scheduler_state" in checkpoint:
+        scheduler.load_state_dict(checkpoint["scheduler_state"])
+
+    if scaler is not None and "scaler_state" in checkpoint:
+        scaler.load_state_dict(checkpoint["scaler_state"])
+
+    return checkpoint
