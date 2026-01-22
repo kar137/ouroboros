@@ -153,7 +153,32 @@ def main() -> None:
                 print(f"[Warning] Potential gradient vanishing: total L2 norm={total_norm:.4e}")
 
     
-    
+    # 7. Metrics & Logging
+    metrics_path = results_dir / "cifar10_baseline_metrics.json"
+    logger.to_json(metrics_path)
+    print(f"[Metrics] Saved metrics to {metrics_path}")
+
+    plot_paths = plot_learning_curves(metrics_path, output_dir=results_dir / "figures", prefix="cifar10_baseline")
+    print(f"[Metrics] Saved plots: {json.dumps(plot_paths, indent=2)}")
+
+    # 8. Checkpointing
+    final_metrics = {
+        "train_loss": logger.epoch_metrics[-1]["train"].get("loss", 0.0),
+        "train_accuracy": logger.epoch_metrics[-1]["train"].get("accuracy", 0.0),
+        "val_loss": logger.epoch_metrics[-1]["validation"].get("loss", 0.0),
+        "val_accuracy": logger.epoch_metrics[-1]["validation"].get("accuracy", 0.0),
+    }
+    checkpoint_path = checkpoints_dir / "cifar10_baseline.pth"
+    save_checkpoint(str(checkpoint_path), model, optimizer, epochs, final_metrics)
+    print(f"[Checkpoint] Saved to {checkpoint_path}")
+
+    # 9. Validation & Verification
+    final_val_acc = final_metrics["val_accuracy"]
+    print(f"[Result] Final validation accuracy: {final_val_acc:.4f}")
+    if final_val_acc < 0.65:
+        print("[Result] Warning: validation accuracy below 65% target.")
+
+    print("[Done] Baseline experiment complete.")
 
 
 if __name__ == "__main__":
