@@ -2,7 +2,7 @@
 
 import time
 from contextlib import nullcontext
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import torch
 from torch import nn
@@ -76,7 +76,9 @@ def train_epoch(
     use_compile: bool = False,
     collect_timing: bool = False,
     collect_grad_stats: bool = False,
+    collect_grad_stats_per_step: bool = False,
     grad_stats_fn: Optional[Callable[[nn.Module], Dict[str, float]]] = None,
+    grad_stats_hook: Optional[Callable[[Dict[str, float], int], None]] = None,
 ) -> Dict[str, float]:
 
     gradient_accumulation_steps = max(1, int(gradient_accumulation_steps))
@@ -91,6 +93,7 @@ def train_epoch(
     running_correct = 0
     total_samples = 0
     grad_stats: Optional[Dict[str, float]] = None
+    grad_stats_per_step: Optional[List[Dict[str, float]]] = [] if collect_grad_stats_per_step else None
     dataloader_len = len(dataloader)
 
     # Prepare AMP contexts.
@@ -102,6 +105,7 @@ def train_epoch(
 
     optimizer.zero_grad(set_to_none=True)
     micro_step = 0
+    update_step = 0
 
     for step_idx, (inputs, targets) in enumerate(dataloader):
         inputs = inputs.to(device, non_blocking=True)
@@ -135,6 +139,21 @@ def train_epoch(
             else:
                 optimizer.step()
 
+            update_step += 1
+
+            if collect_grad_stats_per_step:
+                if grad_stats_fn is None:
+                    try:
+                        from src.metrics import compute_gradient_stats  # type: ignore
+                    except Exception:
+                        from metrics import compute_gradient_stats  # type: ignore
+                    grad_stats_fn = compute_gradient_stats
+                step_stats = grad_stats_fn(model)
+                if grad_stats_per_step is not None:
+                    grad_stats_per_step.append(step_stats)
+                if grad_stats_hook is not None:
+                    grad_stats_hook(step_stats, update_step)
+
             if collect_grad_stats and is_last_batch:
                 if grad_stats_fn is None:
                     try:
@@ -157,6 +176,21 @@ def train_epoch(
         else:
             optimizer.step()
 
+        update_step += 1
+
+        if collect_grad_stats_per_step:
+            if grad_stats_fn is None:
+                try:
+                    from src.metrics import compute_gradient_stats  # type: ignore
+                except Exception:
+                    from metrics import compute_gradient_stats  # type: ignore
+                grad_stats_fn = compute_gradient_stats
+            step_stats = grad_stats_fn(model)
+            if grad_stats_per_step is not None:
+                grad_stats_per_step.append(step_stats)
+            if grad_stats_hook is not None:
+                grad_stats_hook(step_stats, update_step)
+
         if collect_grad_stats:
             if grad_stats_fn is None:
                 try:
@@ -178,6 +212,9 @@ def train_epoch(
 
     if grad_stats is not None:
         metrics["gradients"] = grad_stats
+
+    if grad_stats_per_step is not None:
+        metrics["gradients_per_step"] = grad_stats_per_step
 
     if collect_timing and start_time is not None:
         elapsed = time.perf_counter() - start_time

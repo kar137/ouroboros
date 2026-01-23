@@ -225,3 +225,118 @@ def plot_learning_curves(
     plt.close()
 
     return {"loss_curve": str(loss_path), "accuracy_curve": str(acc_path)}
+
+
+def plot_comparison_curves(
+    metrics_map: Dict[str, Union[str, Path, Dict[str, Any]]],
+    output_dir: Union[str, Path] = "plots",
+    prefix: str = "dataset_comparison",
+) -> Dict[str, str]:
+    """Plot comparison charts across datasets (loss, accuracy, gradient norms)."""
+
+    def _load_metrics(value: Union[str, Path, Dict[str, Any]]) -> Dict[str, Any]:
+        if isinstance(value, (str, Path)):
+            with Path(value).open("r", encoding="utf-8") as f:
+                return json.load(f)
+        return value
+
+    metrics_by_dataset = {name: _load_metrics(data) for name, data in metrics_map.items()}
+
+    output_path = Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
+
+    # Accuracy vs epoch
+    acc_path = output_path / f"{prefix}_accuracy.png"
+    import matplotlib.pyplot as plt
+
+    plt.figure(figsize=(7, 4))
+    for name, metrics in metrics_by_dataset.items():
+        epochs = [entry.get("epoch") for entry in metrics.get("epoch_metrics", [])]
+        accs = [entry.get("validation", {}).get("accuracy") for entry in metrics.get("epoch_metrics", [])]
+        plt.plot(epochs, accs, marker="o", label=name)
+    plt.xlabel("epoch")
+    plt.ylabel("validation accuracy")
+    plt.title("Accuracy vs. Epoch")
+    plt.grid(True, linestyle="--", linewidth=0.5)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(acc_path, dpi=200)
+    plt.close()
+
+    # Loss vs epoch
+    loss_path = output_path / f"{prefix}_loss.png"
+    plt.figure(figsize=(7, 4))
+    for name, metrics in metrics_by_dataset.items():
+        epochs = [entry.get("epoch") for entry in metrics.get("epoch_metrics", [])]
+        losses = [entry.get("validation", {}).get("loss") for entry in metrics.get("epoch_metrics", [])]
+        plt.plot(epochs, losses, marker="o", label=name)
+    plt.xlabel("epoch")
+    plt.ylabel("validation loss")
+    plt.title("Loss vs. Epoch")
+    plt.grid(True, linestyle="--", linewidth=0.5)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(loss_path, dpi=200)
+    plt.close()
+
+    # Gradient norm patterns per layer (dataset overlays)
+    grad_path = output_path / f"{prefix}_gradients.png"
+    # Collect per-layer series per dataset.
+    layer_names = set()
+    per_dataset_layer_series: Dict[str, Dict[str, List[float]]] = {}
+
+    for name, metrics in metrics_by_dataset.items():
+        layer_series: Dict[str, List[float]] = {}
+        for entry in metrics.get("epoch_metrics", []):
+            gradients = entry.get("gradients", {}) or {}
+
+            per_step = gradients.get("per_step") if isinstance(gradients, dict) else None
+            if per_step:
+                # Average per-layer norms across steps for the epoch.
+                step_layer_values: Dict[str, List[float]] = {}
+                for step_stats in per_step:
+                    per_layer = step_stats.get("per_layer_l2_norms", {})
+                    for layer, value in per_layer.items():
+                        step_layer_values.setdefault(layer, []).append(float(value))
+                for layer, values in step_layer_values.items():
+                    layer_series.setdefault(layer, []).append(float(sum(values) / max(1, len(values))))
+            else:
+                per_layer = gradients.get("per_layer_l2_norms", {}) if isinstance(gradients, dict) else {}
+                for layer, value in per_layer.items():
+                    layer_series.setdefault(layer, []).append(float(value))
+
+        per_dataset_layer_series[name] = layer_series
+        layer_names.update(layer_series.keys())
+
+    if layer_names:
+        layer_names_sorted = sorted(layer_names)
+        num_layers = len(layer_names_sorted)
+        cols = 2
+        rows = (num_layers + cols - 1) // cols
+        fig, axes = plt.subplots(rows, cols, figsize=(10, 4 * rows), squeeze=False)
+
+        for idx, layer in enumerate(layer_names_sorted):
+            ax = axes[idx // cols][idx % cols]
+            for name, layer_series in per_dataset_layer_series.items():
+                series = layer_series.get(layer, [])
+                epochs = list(range(1, len(series) + 1))
+                if series:
+                    ax.plot(epochs, series, marker="o", label=name)
+            ax.set_title(f"Gradient L2 Norm: {layer}")
+            ax.set_xlabel("epoch")
+            ax.set_ylabel("avg grad norm")
+            ax.grid(True, linestyle="--", linewidth=0.5)
+            ax.legend()
+
+        for idx in range(num_layers, rows * cols):
+            fig.delaxes(axes[idx // cols][idx % cols])
+
+        fig.tight_layout()
+        fig.savefig(grad_path, dpi=200)
+        plt.close(fig)
+
+    return {
+        "accuracy_curve": str(acc_path),
+        "loss_curve": str(loss_path),
+        "gradient_curves": str(grad_path) if layer_names else "",
+    }
