@@ -2,6 +2,7 @@
 
 import time
 from contextlib import nullcontext
+from weakref import WeakKeyDictionary
 from typing import Any, Callable, Dict, List, Optional, Union
 
 import torch
@@ -19,6 +20,10 @@ def _compute_accuracy(outputs: torch.Tensor, targets: torch.Tensor) -> float:
     return float(correct) / float(total) if total > 0 else 0.0
 
 
+# Cache for compiled models to avoid recompilation overhead.
+_compiled_model_cache = WeakKeyDictionary()
+
+
 def maybe_compile_model(model: nn.Module, use_compile: bool) -> nn.Module:
     """Optionally wrap the model with torch.compile; safe fallback on failure."""
 
@@ -29,18 +34,16 @@ def maybe_compile_model(model: nn.Module, use_compile: bool) -> nn.Module:
     if compile_fn is None:
         return model
 
-    cached = getattr(model, "_compiled_wrapper", None)
-    if cached is not None:
-        return cached
+    if model in _compiled_model_cache:
+        return _compiled_model_cache[model]
 
-    # Avoid recompiling the same instance.
-    if getattr(model, "_compiled_with_torch_compile", False):
-        return model
+    # Check if the model itself is already a compiled wrapper
+    if hasattr(model, "_orig_mod"):
+         return model
 
     try:
         compiled_model = compile_fn(model)
-        setattr(compiled_model, "_compiled_with_torch_compile", True)
-        setattr(model, "_compiled_wrapper", compiled_model)
+        _compiled_model_cache[model] = compiled_model
         return compiled_model
     except Exception:
         # Fall back silently to eager execution to preserve robustness.
