@@ -1,0 +1,50 @@
+{
+  "run_metadata": {
+    "dataset": "CIFAR-10",
+    "run": "metrics_validation"
+  },
+  "epoch_metrics": [
+    {
+      "epoch": 1,
+      "train": {
+        "loss": 2.1101081371307373,
+        "accuracy": 0.21826171875,
+        "time_sec": 19.250174652,
+        "samples_per_sec": 106.38864514339473
+      },
+      "validation": {
+        "loss": 2.155471533536911,
+        "accuracy": 0.19921875
+      },
+      "gradients": {
+        "total_l2_norm": 0.851785619328918,
+        "per_layer_l2_norms": {
+          "_orig_mod.conv1.weight": 0.49635639786720276,
+          "_orig_mod.conv1.bias": 4.8312008402717765e-06,
+          "_orig_mod.bn1.weight": 0.02125183865427971,
+          "_orig_mod.bn1.bias": 0.014809773303568363,
+          "_orig_mod.conv2.weight": 0.3360792100429535,
+          "_orig_mod.conv2.bias": 2.2620108666160377e-06,
+          "_orig_mod.bn2.weight": 0.010747430846095085,
+          "_orig_mod.bn2.bias": 0.007386334240436554,
+          "_orig_mod.conv3.weight": 0.2573991119861603,
+          "_orig_mod.conv3.bias": 1.29971954265784e-06,
+          "_orig_mod.bn3.weight": 0.032057084143161774,
+          "_orig_mod.bn3.bias": 0.03741207346320152,
+          "_orig_mod.fc.weight": 0.5308973789215088,
+          "_orig_mod.fc.bias": 0.12184066325426102
+        },
+        "zero_grad_parameters": 0
+      },
+      "system": {
+        "device": "cuda",
+        "max_memory_allocated_mb": 54.4951171875,
+        "max_memory_reserved_mb": 100.0
+      },
+      "convergence": {
+        "loss_delta": null,
+        "accuracy_improvement": null
+      }
+    }
+  ]
+}
