@@ -2,6 +2,7 @@
 
 import time
 from contextlib import nullcontext
+from functools import partial
 from weakref import WeakKeyDictionary
 from typing import Any, Callable, Dict, List, Optional, Union
 
@@ -39,7 +40,7 @@ def maybe_compile_model(model: nn.Module, use_compile: bool) -> nn.Module:
 
     # Check if the model itself is already a compiled wrapper
     if hasattr(model, "_orig_mod"):
-         return model
+        return model
 
     try:
         compiled_model = compile_fn(model)
@@ -72,8 +73,8 @@ def train_epoch(
     optimizer: Optimizer,
     criterion: nn.Module,
     device: torch.device,
-    scaler: Optional[torch.cuda.amp.GradScaler] = None,
-    scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
+    scaler: Optional[Any] = None,  # torch.amp.GradScaler or torch.cuda.amp.GradScaler
+    scheduler: Optional[Any] = None,  # Any LR scheduler
     gradient_accumulation_steps: int = 1,
     amp_enabled: bool = False,
     use_compile: bool = False,
@@ -101,8 +102,25 @@ def train_epoch(
 
     # Prepare AMP contexts.
     amp_active = amp_enabled and device.type == "cuda"
-    autocast_ctx = torch.cuda.amp.autocast if amp_active else nullcontext
-    scaler_to_use = scaler if (scaler is not None) else (torch.cuda.amp.GradScaler() if amp_active else None)
+
+    if amp_active:
+        # Prefer new torch.amp APIs (PyTorch 2.0+), but fall back for older versions.
+        amp_autocast = getattr(getattr(torch, "amp", None), "autocast", None)
+        if amp_autocast is not None:
+            autocast_ctx = partial(amp_autocast, device_type="cuda")
+        else:
+            autocast_ctx = torch.cuda.amp.autocast
+
+        amp_grad_scaler = getattr(getattr(torch, "amp", None), "GradScaler", None)
+        if scaler is not None:
+            scaler_to_use = scaler
+        elif amp_grad_scaler is not None:
+            scaler_to_use = amp_grad_scaler("cuda")
+        else:
+            scaler_to_use = torch.cuda.amp.GradScaler()
+    else:
+        autocast_ctx = nullcontext
+        scaler_to_use = scaler if (scaler is not None) else None
 
     start_time = time.perf_counter() if collect_timing else None
 
@@ -266,8 +284,8 @@ def save_checkpoint(
     optimizer: Optimizer,
     epoch: int,
     metrics: Dict[str, float],
-    scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
-    scaler: Optional[torch.cuda.amp.GradScaler] = None,
+    scheduler: Optional[Any] = None,  # Any LR scheduler
+    scaler: Optional[Any] = None,  # torch.amp.GradScaler or torch.cuda.amp.GradScaler
 ) -> None:
 
     state = {
@@ -289,8 +307,8 @@ def load_checkpoint(
     path: str,
     model: nn.Module,
     optimizer: Optional[Optimizer] = None,
-    scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
-    scaler: Optional[torch.cuda.amp.GradScaler] = None,
+    scheduler: Optional[Any] = None,  # Any LR scheduler
+    scaler: Optional[Any] = None,  # torch.amp.GradScaler or torch.cuda.amp.GradScaler
     map_location: Optional[Union[str, torch.device]] = None,
 ) -> Dict[str, Any]:
 
