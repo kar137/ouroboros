@@ -247,19 +247,36 @@ def _write_csvs(run_rows: List[Dict[str, Any]], summary_rows: List[Dict[str, Any
     output_dir = Path("results") / "reproducibility"
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    def _merge_fieldnames(preferred: List[str], rows: List[Dict[str, Any]]) -> List[str]:
+        keys = []
+        seen = set()
+        for key in preferred:
+            if key not in seen:
+                keys.append(key)
+                seen.add(key)
+        for row in rows:
+            for key in row.keys():
+                if key not in seen:
+                    keys.append(key)
+                    seen.add(key)
+        return keys
+
     runs_path = Path("results") / "baseline_runs.csv"
     with runs_path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(
             f,
-            fieldnames=[
-                "dataset",
-                "seed",
-                "final_training_accuracy",
-                "final_validation_accuracy",
-                "total_training_time",
-                "metrics_path",
-                "checkpoint_path",
-            ],
+            fieldnames=_merge_fieldnames(
+                [
+                    "dataset",
+                    "seed",
+                    "final_training_accuracy",
+                    "final_validation_accuracy",
+                    "total_training_time",
+                    "metrics_path",
+                    "checkpoint_path",
+                ],
+                run_rows,
+            ),
             extrasaction="ignore",
         )
         writer.writeheader()
@@ -269,14 +286,17 @@ def _write_csvs(run_rows: List[Dict[str, Any]], summary_rows: List[Dict[str, Any
     with summary_path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(
             f,
-            fieldnames=[
-                "dataset",
-                "mean_accuracy",
-                "std_accuracy",
-                "min_accuracy",
-                "max_accuracy",
-                "target_accuracy",
-            ],
+            fieldnames=_merge_fieldnames(
+                [
+                    "dataset",
+                    "mean_accuracy",
+                    "std_accuracy",
+                    "min_accuracy",
+                    "max_accuracy",
+                    "target_accuracy",
+                ],
+                summary_rows,
+            ),
             extrasaction="ignore",
         )
         writer.writeheader()
