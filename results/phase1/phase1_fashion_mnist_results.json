@@ -1,0 +1,127 @@
+{
+  "dataset": "fashion_mnist",
+  "experiments": [
+    {
+      "experiment_name": "fashion_mnist_seed42",
+      "config": {
+        "epochs": 5,
+        "batch_size": 128,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "warmup_epochs": 1,
+        "optimizer": "adamw",
+        "momentum": 0.9,
+        "num_workers": 2,
+        "data_dir": "assets",
+        "dataset": "fashion_mnist",
+        "seed": 42
+      },
+      "final_train_acc": 0.8659521901709402,
+      "final_val_acc": 0.8646,
+      "test_acc": 0.8646,
+      "test_loss": 0.3775893373966217,
+      "total_time_sec": 101.02895362600009,
+      "mean_epoch_time": 20.202494218199945,
+      "params": 94410
+    },
+    {
+      "experiment_name": "fashion_mnist_seed123",
+      "config": {
+        "epochs": 5,
+        "batch_size": 128,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "warmup_epochs": 1,
+        "optimizer": "adamw",
+        "momentum": 0.9,
+        "num_workers": 2,
+        "data_dir": "assets",
+        "dataset": "fashion_mnist",
+        "seed": 123
+      },
+      "final_train_acc": 0.8648504273504274,
+      "final_val_acc": 0.87,
+      "test_acc": 0.87,
+      "test_loss": 0.3634070197105408,
+      "total_time_sec": 102.172044454,
+      "mean_epoch_time": 20.430472197200015,
+      "params": 94410
+    },
+    {
+      "experiment_name": "fashion_mnist_seed456",
+      "config": {
+        "epochs": 5,
+        "batch_size": 128,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "warmup_epochs": 1,
+        "optimizer": "adamw",
+        "momentum": 0.9,
+        "num_workers": 2,
+        "data_dir": "assets",
+        "dataset": "fashion_mnist",
+        "seed": 456
+      },
+      "final_train_acc": 0.8683727297008547,
+      "final_val_acc": 0.8747,
+      "test_acc": 0.8747,
+      "test_loss": 0.35895147037506103,
+      "total_time_sec": 104.22623873500015,
+      "mean_epoch_time": 20.841847661400017,
+      "params": 94410
+    },
+    {
+      "experiment_name": "fashion_mnist_higher_lr",
+      "config": {
+        "epochs": 5,
+        "batch_size": 128,
+        "lr": 0.003,
+        "weight_decay": 0.0001,
+        "warmup_epochs": 1,
+        "optimizer": "adamw",
+        "momentum": 0.9,
+        "num_workers": 2,
+        "data_dir": "assets",
+        "dataset": "fashion_mnist",
+        "seed": 42
+      },
+      "final_train_acc": 0.8841646634615384,
+      "final_val_acc": 0.8845,
+      "test_acc": 0.8845,
+      "test_loss": 0.3258931286334991,
+      "total_time_sec": 107.09997257600003,
+      "mean_epoch_time": 21.416592447199992,
+      "params": 94410
+    },
+    {
+      "experiment_name": "fashion_mnist_sgd",
+      "config": {
+        "epochs": 5,
+        "batch_size": 128,
+        "lr": 0.01,
+        "weight_decay": 0.0001,
+        "warmup_epochs": 1,
+        "optimizer": "sgd",
+        "momentum": 0.9,
+        "num_workers": 2,
+        "data_dir": "assets",
+        "dataset": "fashion_mnist",
+        "seed": 42
+      },
+      "final_train_acc": 0.846854967948718,
+      "final_val_acc": 0.8476,
+      "test_acc": 0.8476,
+      "test_loss": 0.4255239567756653,
+      "total_time_sec": 104.5701404219999,
+      "mean_epoch_time": 20.91006855319997,
+      "params": 94410
+    }
+  ],
+  "baseline_statistics": {
+    "baseline_val_mean": 0.8697666666666667,
+    "baseline_val_std": 0.004126607430915724,
+    "baseline_test_mean": 0.8697666666666667,
+    "baseline_test_std": 0.004126607430915724
+  },
+  "timestamp": "2026-01-31 17:58:40"
+}
