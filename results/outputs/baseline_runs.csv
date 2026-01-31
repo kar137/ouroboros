@@ -1,0 +1,10 @@
+dataset,seed,final_training_accuracy,final_validation_accuracy,total_training_time,metrics_path,checkpoint_path
+CIFAR-10,7,0.6288461538461538,0.6074,106.11232173999997,results/reproducibility/cifar10_seed7_metrics.json,checkpoints/cifar10_seed7.pth
+CIFAR-10,42,0.6259415064102564,0.6062,106.10516727100003,results/reproducibility/cifar10_seed42_metrics.json,checkpoints/cifar10_seed42.pth
+CIFAR-10,1337,0.6220953525641025,0.5964,108.31101684999976,results/reproducibility/cifar10_seed1337_metrics.json,checkpoints/cifar10_seed1337.pth
+Fashion-MNIST,7,0.8519631410256411,0.8387,112.4372313240001,results/reproducibility/fashion_mnist_seed7_metrics.json,checkpoints/fashion_mnist_seed7.pth
+Fashion-MNIST,42,0.8544003739316239,0.8482,112.10630562799997,results/reproducibility/fashion_mnist_seed42_metrics.json,checkpoints/fashion_mnist_seed42.pth
+Fashion-MNIST,1337,0.8524305555555556,0.8483,119.4242537199998,results/reproducibility/fashion_mnist_seed1337_metrics.json,checkpoints/fashion_mnist_seed1337.pth
+CIFAR-100,7,0.2722355769230769,0.2706,112.5063226730008,results/reproducibility/cifar100_seed7_metrics.json,checkpoints/cifar100_seed7.pth
+CIFAR-100,42,0.27676282051282053,0.2674,110.69800801900055,results/reproducibility/cifar100_seed42_metrics.json,checkpoints/cifar100_seed42.pth
+CIFAR-100,1337,0.27580128205128207,0.2623,110.70338819300014,results/reproducibility/cifar100_seed1337_metrics.json,checkpoints/cifar100_seed1337.pth
