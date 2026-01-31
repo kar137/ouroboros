@@ -102,6 +102,7 @@ class MetricsLogger:
         validation: Optional[Dict[str, Any]] = None,
         gradients: Optional[Dict[str, Any]] = None,
         system: Optional[Dict[str, Any]] = None,
+        learning_rate: Optional[float] = None,
     ) -> Dict[str, Any]:
         """Store a single epoch's metrics and compute convergence deltas."""
 
@@ -136,6 +137,10 @@ class MetricsLogger:
                 "accuracy_improvement": acc_improvement,
             },
         }
+        
+        # Add learning rate if provided
+        if learning_rate is not None:
+            entry["learning_rate"] = float(learning_rate)
 
         self.epoch_metrics.append(entry)
         return entry

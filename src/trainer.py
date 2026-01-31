@@ -51,7 +51,31 @@ def maybe_compile_model(model: nn.Module, use_compile: bool) -> nn.Module:
         return model
 
 
-# Create a warmup + cosine scheduler using SequentialLR.
+# Create a warmup + cosine scheduler using SequentialLR (epoch-level scheduling).
+def get_epoch_scheduler(optimizer: Optimizer, total_epochs: int, warmup_epochs: int = 1) -> SequentialLR:
+    """Create a warmup + cosine annealing scheduler for epoch-level stepping.
+    
+    Args:
+        optimizer: The optimizer to schedule.
+        total_epochs: Total number of training epochs.
+        warmup_epochs: Number of epochs for linear warmup (default: 1).
+    
+    Returns:
+        SequentialLR scheduler that should be stepped once per epoch.
+    """
+    warmup_epochs = max(0, int(warmup_epochs))
+    cosine_epochs = max(1, int(total_epochs) - warmup_epochs)
+
+    if warmup_epochs == 0:
+        cosine = CosineAnnealingLR(optimizer, T_max=cosine_epochs)
+        return SequentialLR(optimizer, schedulers=[cosine], milestones=[])
+
+    warmup = LinearLR(optimizer, start_factor=1e-3, end_factor=1.0, total_iters=max(1, warmup_epochs))
+    cosine = CosineAnnealingLR(optimizer, T_max=cosine_epochs)
+    return SequentialLR(optimizer, schedulers=[warmup, cosine], milestones=[warmup_epochs])
+
+
+# Create a warmup + cosine scheduler using SequentialLR (step-level, legacy).
 def get_scheduler(optimizer: Optimizer, total_steps: int, warmup_steps: int) -> SequentialLR:
 
     warmup_steps = max(0, int(warmup_steps))
@@ -64,6 +88,13 @@ def get_scheduler(optimizer: Optimizer, total_steps: int, warmup_steps: int) -> 
     warmup = LinearLR(optimizer, start_factor=1e-3, end_factor=1.0, total_iters=max(1, warmup_steps))
     cosine = CosineAnnealingLR(optimizer, T_max=cosine_steps)
     return SequentialLR(optimizer, schedulers=[warmup, cosine], milestones=[warmup_steps])
+
+
+def get_current_lr(optimizer: Optimizer) -> float:
+    """Get the current learning rate from the optimizer."""
+    for param_group in optimizer.param_groups:
+        return float(param_group['lr'])
+    return 0.0
 
 
 # Run one training epoch with optional AMP, accumulation, scheduler, compile.

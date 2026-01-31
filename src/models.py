@@ -6,35 +6,48 @@ import torch.nn as nn
 from typing import Tuple
 
 
+# Default channel configuration for CIFAR-10 and Fashion-MNIST
+DEFAULT_CHANNELS = [32, 64, 128]
+# Wider channel configuration for CIFAR-100 (100 classes needs more capacity)
+WIDE_CHANNELS = [64, 128, 256]
+
+
 # 3-Layer Convolutional Neural Network with adaptive input support. 
 class CNN3Layer(nn.Module):
     
-    def __init__(self, num_classes: int = 10, in_channels: int = 3):
+    def __init__(self, num_classes: int = 10, in_channels: int = 3, channels: Tuple[int, int, int] = None):
         super(CNN3Layer, self).__init__()
+        
+        # Use default channels if not specified
+        if channels is None:
+            channels = tuple(DEFAULT_CHANNELS)
         
         self.num_classes = num_classes
         self.in_channels = in_channels
+        self.channels = channels
+        
+        c1, c2, c3 = channels
         
         # Block 1: Initial feature extraction
-        self.conv1 = nn.Conv2d(in_channels, 24, kernel_size=3, stride=1, padding=1)     # same padding: padding = kernel_size // 2  
-        self.bn1 = nn.BatchNorm2d(24)
+        self.conv1 = nn.Conv2d(in_channels, c1, kernel_size=3, stride=1, padding=1)     # same padding: padding = kernel_size // 2  
+        self.bn1 = nn.BatchNorm2d(c1)
         self.relu1 = nn.ReLU(inplace=True)
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)      # Spatial reduction: H/2, W/2
         
         # Block 2: Intermediate feature refinement
-        self.conv2 = nn.Conv2d(24, 48, kernel_size=3, stride=1, padding=1)
-        self.bn2 = nn.BatchNorm2d(48)
+        self.conv2 = nn.Conv2d(c1, c2, kernel_size=3, stride=1, padding=1)
+        self.bn2 = nn.BatchNorm2d(c2)
         self.relu2 = nn.ReLU(inplace=True)
         self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)   # Spatial reduction: H/4, W/4
         
         # Block 3: High-level semantic features
-        self.conv3 = nn.Conv2d(48, 88, kernel_size=3, stride=1, padding=1)
-        self.bn3 = nn.BatchNorm2d(88)
+        self.conv3 = nn.Conv2d(c2, c3, kernel_size=3, stride=1, padding=1)
+        self.bn3 = nn.BatchNorm2d(c3)
         self.relu3 = nn.ReLU(inplace=True)
         self.adaptive_pool = nn.AdaptiveAvgPool2d((1, 1))   # Resolution-agnostic pooling
         
         # Classifier head
-        self.fc = nn.Linear(88, num_classes)
+        self.fc = nn.Linear(c3, num_classes)
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:  # Forward pass through the network.
         """
@@ -62,7 +75,7 @@ class CNN3Layer(nn.Module):
         x = self.adaptive_pool(x)
         
         # Classifier
-        x = torch.flatten(x, 1)  # Flatten from (N, 88, 1, 1) to (N, 88)
+        x = torch.flatten(x, 1)  # Flatten from (N, C3, 1, 1) to (N, C3)
         x = self.fc(x)
         
         return x
@@ -134,8 +147,8 @@ if __name__ == "__main__":
     print("CNN3Layer Architecture Verification")
     print("="*70)
     
-    # Test 1: CIFAR-10 (RGB, 32×32)
-    print("\n[Test 1] CIFAR-10 Configuration")
+    # Test 1: CIFAR-10 (RGB, 32×32) with default channels
+    print("\n[Test 1] CIFAR-10 Configuration (default channels)")
     print("-" * 70)
     model_cifar = CNN3Layer(num_classes=10, in_channels=3)
     dummy_cifar = torch.randn(1, 3, 32, 32)
@@ -144,13 +157,14 @@ if __name__ == "__main__":
     param_count_cifar = count_parameters(model_cifar)
     
     print(f"Input Shape:      {tuple(dummy_cifar.shape)}")
-    print(f"Output Shape:      {tuple(output_cifar.shape)}")
+    print(f"Output Shape:     {tuple(output_cifar.shape)}")
+    print(f"Channels:         {model_cifar.channels}")
     print(f"Parameter Count:  {param_count_cifar:,}")
-    print(f"Target Range:     47,500 - 52,500 parameters")
-    print(f"Status:           {'✓ PASS' if 47500 <= param_count_cifar <= 52500 else '✗ FAIL'}")
+    print(f"Target Range:     80,000 - 120,000 parameters")
+    print(f"Status:           {'✓ PASS' if 80000 <= param_count_cifar <= 120000 else '✗ FAIL'}")
     
-    # Test 2: Fashion-MNIST (Grayscale, 28×28)
-    print("\n[Test 2] Fashion-MNIST Configuration")
+    # Test 2: Fashion-MNIST (Grayscale, 28×28) with default channels
+    print("\n[Test 2] Fashion-MNIST Configuration (default channels)")
     print("-" * 70)
     model_fmnist = CNN3Layer(num_classes=10, in_channels=1)
     dummy_fmnist = torch.randn(1, 1, 28, 28)
@@ -160,9 +174,26 @@ if __name__ == "__main__":
     
     print(f"Input Shape:      {tuple(dummy_fmnist.shape)}")
     print(f"Output Shape:     {tuple(output_fmnist.shape)}")
+    print(f"Channels:         {model_fmnist.channels}")
     print(f"Parameter Count:  {param_count_fmnist:,}")
-    print(f"Target Range:     47,500 - 52,500 parameters")
-    print(f"Status:           {'✓ PASS' if 47500 <= param_count_fmnist <= 52500 else '✗ FAIL'}")
+    print(f"Target Range:     80,000 - 120,000 parameters")
+    print(f"Status:           {'✓ PASS' if 80000 <= param_count_fmnist <= 120000 else '✗ FAIL'}")
+    
+    # Test 3: CIFAR-100 (RGB, 32×32) with WIDE channels
+    print("\n[Test 3] CIFAR-100 Configuration (wide channels)")
+    print("-" * 70)
+    model_cifar100 = CNN3Layer(num_classes=100, in_channels=3, channels=WIDE_CHANNELS)
+    dummy_cifar100 = torch.randn(1, 3, 32, 32)
+    
+    output_cifar100 = model_cifar100(dummy_cifar100)
+    param_count_cifar100 = count_parameters(model_cifar100)
+    
+    print(f"Input Shape:      {tuple(dummy_cifar100.shape)}")
+    print(f"Output Shape:     {tuple(output_cifar100.shape)}")
+    print(f"Channels:         {model_cifar100.channels}")
+    print(f"Parameter Count:  {param_count_cifar100:,}")
+    print(f"Target Range:     350,000 - 450,000 parameters")
+    print(f"Status:           {'✓ PASS' if 350000 <= param_count_cifar100 <= 450000 else '✗ FAIL'}")
     
     # Detailed architecture summary for CIFAR-10
     print("\n[Detailed Summary] CIFAR-10 Model")
@@ -171,6 +202,10 @@ if __name__ == "__main__":
     # Detailed architecture summary for Fashion-MNIST
     print("\n[Detailed Summary] Fashion-MNIST Model")
     model_summary(model_fmnist, (1, 1, 28, 28))
+    
+    # Detailed architecture summary for CIFAR-100 (wide)
+    print("\n[Detailed Summary] CIFAR-100 Model (wide)")
+    model_summary(model_cifar100, (1, 3, 32, 32))
     
     print("\n" + "="*70)
     print("Verification Complete")

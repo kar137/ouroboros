@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 import torch
 from torch import nn
-from torch.optim import Adam
+from torch.optim import AdamW
 from tqdm import tqdm
 
 from src.data_loaders import (
@@ -21,8 +21,8 @@ from src.data_loaders import (
     get_fashion_mnist_loaders,
 )
 from src.metrics import MetricsLogger, compute_system_metrics, plot_learning_curves, reset_cuda_peak_memory
-from src.models import CNN3Layer
-from src.trainer import save_checkpoint, train_epoch, validate_epoch
+from src.models import CNN3Layer, DEFAULT_CHANNELS, WIDE_CHANNELS, count_parameters
+from src.trainer import save_checkpoint, train_epoch, validate_epoch, get_epoch_scheduler, get_current_lr
 
 
 def _set_seed(seed: int, deterministic: bool) -> None:
@@ -36,6 +36,11 @@ def _set_seed(seed: int, deterministic: bool) -> None:
         torch.backends.cudnn.benchmark = False
 
 
+# Training hyperparameters
+WEIGHT_DECAY = 1e-4
+WARMUP_EPOCHS = 1
+
+
 def _dataset_configs() -> List[Dict[str, Any]]:
     return [
         {
@@ -45,6 +50,7 @@ def _dataset_configs() -> List[Dict[str, Any]]:
             "num_classes": 10,
             "in_channels": 3,
             "target_acc": 0.65,
+            "channels": DEFAULT_CHANNELS,  # [32, 64, 128]
         },
         {
             "name": "fashion_mnist",
@@ -53,6 +59,7 @@ def _dataset_configs() -> List[Dict[str, Any]]:
             "num_classes": 10,
             "in_channels": 1,
             "target_acc": 0.88,
+            "channels": DEFAULT_CHANNELS,  # [32, 64, 128]
         },
         {
             "name": "cifar100",
@@ -61,6 +68,7 @@ def _dataset_configs() -> List[Dict[str, Any]]:
             "num_classes": 100,
             "in_channels": 3,
             "target_acc": 0.40,
+            "channels": WIDE_CHANNELS,  # [64, 128, 256] - wider for 100 classes
         },
     ]
 
@@ -80,9 +88,25 @@ def _run_single(
 
     train_loader, val_loader = dataset["loader_fn"](batch_size, num_workers, data_dir, seed=seed)
 
-    model = CNN3Layer(num_classes=dataset["num_classes"], in_channels=dataset["in_channels"]).to(device)
-    optimizer = Adam(model.parameters(), lr=lr)
+    # Get channels config (use WIDE_CHANNELS for CIFAR-100, DEFAULT for others)
+    channels = dataset.get("channels", DEFAULT_CHANNELS)
+    
+    model = CNN3Layer(
+        num_classes=dataset["num_classes"],
+        in_channels=dataset["in_channels"],
+        channels=channels,
+    ).to(device)
+    
+    # Use AdamW with weight decay instead of plain Adam
+    from torch.optim import AdamW
+    optimizer = AdamW(model.parameters(), lr=lr, weight_decay=WEIGHT_DECAY)
     criterion = nn.CrossEntropyLoss()
+    
+    # Create epoch-level LR scheduler: warmup (1 epoch) + cosine annealing
+    scheduler = get_epoch_scheduler(optimizer, total_epochs=epochs, warmup_epochs=WARMUP_EPOCHS)
+    
+    # Count parameters for logging
+    total_params = count_parameters(model)
 
     run_metadata = {
         "dataset": dataset["dataset_label"],
@@ -90,15 +114,24 @@ def _run_single(
         "epochs": epochs,
         "batch_size": batch_size,
         "lr": lr,
+        "weight_decay": WEIGHT_DECAY,
+        "warmup_epochs": WARMUP_EPOCHS,
         "deterministic": deterministic,
         "model": model.__class__.__name__,
+        "channels": list(channels),
+        "total_params": total_params,
     }
     logger = MetricsLogger(run_metadata=run_metadata)
+    
+    print(f"[Model] {dataset['dataset_label']}: channels={channels}, params={total_params:,}")
 
     start_time = time.perf_counter()
     for epoch in tqdm(range(1, epochs + 1), desc=f"{dataset['dataset_label']} seed={seed}", unit="epoch"):
         reset_cuda_peak_memory()
         epoch_start = time.perf_counter()
+        
+        # Get current LR before training step
+        current_lr = get_current_lr(optimizer)
 
         train_metrics = train_epoch(
             model=model,
@@ -117,6 +150,9 @@ def _run_single(
             criterion=criterion,
             device=device,
         )
+        
+        # Step the scheduler AFTER validation, BEFORE next epoch
+        scheduler.step()
 
         system_metrics = compute_system_metrics(
             total_samples=len(train_loader) * batch_size,
@@ -132,6 +168,7 @@ def _run_single(
             validation=val_metrics,
             gradients=train_metrics.get("gradients"),
             system=system_metrics,
+            learning_rate=current_lr,
         )
 
     elapsed = time.perf_counter() - start_time
@@ -148,7 +185,7 @@ def _run_single(
         "val_loss": logger.epoch_metrics[-1]["validation"].get("loss", 0.0),
         "val_accuracy": logger.epoch_metrics[-1]["validation"].get("accuracy", 0.0),
     }
-    save_checkpoint(str(checkpoint_path), model, optimizer, epochs, final_metrics)
+    save_checkpoint(str(checkpoint_path), model, optimizer, epochs, final_metrics, scheduler=scheduler)
 
     plot_learning_curves(metrics_path, output_dir=Path("results") / "figures", prefix=f"{dataset['name']}_seed{seed}")
 
