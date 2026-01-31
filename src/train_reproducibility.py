@@ -123,6 +123,11 @@ def _run_single(
     }
     logger = MetricsLogger(run_metadata=run_metadata)
     
+    # Mandatory logging per user requirements
+    print(f"[OPTIMIZER] Type: {type(optimizer).__name__} | "
+          f"lr={optimizer.param_groups[0]['lr']} | "
+          f"weight_decay={optimizer.param_groups[0]['weight_decay']}")
+    print(f"[MODEL] Total params: {total_params}")
     print(f"[Model] {dataset['dataset_label']}: channels={channels}, params={total_params:,}")
 
     start_time = time.perf_counter()
@@ -153,6 +158,10 @@ def _run_single(
         
         # Step the scheduler AFTER validation, BEFORE next epoch
         scheduler.step()
+        
+        # Log LR AFTER scheduler.step() to show the LR that will be used next epoch
+        post_step_lr = optimizer.param_groups[0]['lr']
+        print(f"[SCHEDULER] Epoch {epoch} | LR: {post_step_lr:.6f}")
 
         system_metrics = compute_system_metrics(
             total_samples=len(train_loader) * batch_size,

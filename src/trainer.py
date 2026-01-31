@@ -67,11 +67,11 @@ def get_epoch_scheduler(optimizer: Optimizer, total_epochs: int, warmup_epochs: 
     cosine_epochs = max(1, int(total_epochs) - warmup_epochs)
 
     if warmup_epochs == 0:
-        cosine = CosineAnnealingLR(optimizer, T_max=cosine_epochs)
+        cosine = CosineAnnealingLR(optimizer, T_max=cosine_epochs, eta_min=1e-5)
         return SequentialLR(optimizer, schedulers=[cosine], milestones=[])
 
-    warmup = LinearLR(optimizer, start_factor=1e-3, end_factor=1.0, total_iters=max(1, warmup_epochs))
-    cosine = CosineAnnealingLR(optimizer, T_max=cosine_epochs)
+    warmup = LinearLR(optimizer, start_factor=0.5, end_factor=1.0, total_iters=max(1, warmup_epochs))
+    cosine = CosineAnnealingLR(optimizer, T_max=cosine_epochs, eta_min=1e-5)
     return SequentialLR(optimizer, schedulers=[warmup, cosine], milestones=[warmup_epochs])
 
 
