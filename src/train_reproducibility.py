@@ -257,7 +257,10 @@ def _write_csvs(run_rows: List[Dict[str, Any]], summary_rows: List[Dict[str, Any
                 "final_training_accuracy",
                 "final_validation_accuracy",
                 "total_training_time",
+                "metrics_path",
+                "checkpoint_path",
             ],
+            extrasaction="ignore",
         )
         writer.writeheader()
         writer.writerows(run_rows)
@@ -272,7 +275,9 @@ def _write_csvs(run_rows: List[Dict[str, Any]], summary_rows: List[Dict[str, Any
                 "std_accuracy",
                 "min_accuracy",
                 "max_accuracy",
+                "target_accuracy",
             ],
+            extrasaction="ignore",
         )
         writer.writeheader()
         writer.writerows(summary_rows)
