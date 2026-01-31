@@ -155,13 +155,6 @@ def _run_single(
             criterion=criterion,
             device=device,
         )
-        
-        # Step the scheduler AFTER validation, BEFORE next epoch
-        scheduler.step()
-        
-        # Log LR AFTER scheduler.step() to show the LR that will be used next epoch
-        post_step_lr = optimizer.param_groups[0]['lr']
-        print(f"[SCHEDULER] Epoch {epoch} | LR: {post_step_lr:.6f}")
 
         system_metrics = compute_system_metrics(
             total_samples=len(train_loader) * batch_size,
@@ -179,6 +172,13 @@ def _run_single(
             system=system_metrics,
             learning_rate=current_lr,
         )
+        
+        # Step the scheduler at END of epoch, after all logging
+        scheduler.step()
+        
+        # Log LR AFTER scheduler.step() to show the LR that will be used next epoch
+        post_step_lr = optimizer.param_groups[0]['lr']
+        print(f"[SCHEDULER] Epoch {epoch} | LR: {post_step_lr:.6f}")
 
     elapsed = time.perf_counter() - start_time
 
