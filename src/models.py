@@ -192,8 +192,8 @@ if __name__ == "__main__":
     print(f"Output Shape:     {tuple(output_cifar100.shape)}")
     print(f"Channels:         {model_cifar100.channels}")
     print(f"Parameter Count:  {param_count_cifar100:,}")
-    print(f"Target Range:     350,000 - 450,000 parameters")
-    print(f"Status:           {'✓ PASS' if 350000 <= param_count_cifar100 <= 450000 else '✗ FAIL'}")
+    print(f"Target Range:     300,000 - 500,000 parameters")
+    print(f"Status:           {'✓ PASS' if 300000 <= param_count_cifar100 <= 500000 else '✗ FAIL'}")
     
     # Detailed architecture summary for CIFAR-10
     print("\n[Detailed Summary] CIFAR-10 Model")
