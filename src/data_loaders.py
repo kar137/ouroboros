@@ -139,3 +139,41 @@ def get_fashion_mnist_loaders(
     train_tf = _build_fmnist_transforms(train=True)
     val_tf = _build_fmnist_transforms(train=False)
     return _make_loaders(datasets.FashionMNIST, train_tf, val_tf, batch_size, num_workers, data_dir, seed=seed)
+
+
+# ============================================================================
+# TEST SET LOADERS (for final evaluation)
+# ============================================================================
+
+def _make_test_loader(
+    dataset_cls,
+    transform,
+    batch_size: int,
+    num_workers: int,
+    data_dir: str,
+) -> DataLoader:
+    """Create a test set DataLoader (no train split, just test=True)."""
+    test_set = dataset_cls(root=data_dir, train=False, download=True, transform=transform)
+    return DataLoader(
+        test_set,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=True,
+        drop_last=False,
+    )
+
+
+def get_cifar10_test_loader(batch_size: int, num_workers: int, data_dir: str) -> DataLoader:
+    """Get CIFAR-10 test set loader."""
+    return _make_test_loader(datasets.CIFAR10, _build_cifar_transforms(train=False), batch_size, num_workers, data_dir)
+
+
+def get_cifar100_test_loader(batch_size: int, num_workers: int, data_dir: str) -> DataLoader:
+    """Get CIFAR-100 test set loader."""
+    return _make_test_loader(datasets.CIFAR100, _build_cifar_transforms(train=False), batch_size, num_workers, data_dir)
+
+
+def get_fashion_mnist_test_loader(batch_size: int, num_workers: int, data_dir: str) -> DataLoader:
+    """Get Fashion-MNIST test set loader."""
+    return _make_test_loader(datasets.FashionMNIST, _build_fmnist_transforms(train=False), batch_size, num_workers, data_dir)
