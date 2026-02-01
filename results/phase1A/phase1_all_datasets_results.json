@@ -1,0 +1,381 @@
+{
+  "datasets": [
+    "cifar10",
+    "fashion_mnist",
+    "cifar100"
+  ],
+  "all_experiments": {
+    "cifar10": [
+      {
+        "experiment_name": "cifar10_seed42",
+        "config": {
+          "epochs": 5,
+          "batch_size": 128,
+          "lr": 0.001,
+          "weight_decay": 0.0001,
+          "warmup_epochs": 1,
+          "optimizer": "adamw",
+          "momentum": 0.9,
+          "num_workers": 2,
+          "data_dir": "assets",
+          "dataset": "cifar10",
+          "seed": 42
+        },
+        "final_train_acc": 0.6487491096866097,
+        "final_val_acc": 0.6386,
+        "test_acc": 0.6376,
+        "test_loss": 1.0139701793670655,
+        "total_time_sec": 91.51285580400003,
+        "mean_epoch_time": 18.29663860559998,
+        "params": 94986
+      },
+      {
+        "experiment_name": "cifar10_seed123",
+        "config": {
+          "epochs": 5,
+          "batch_size": 128,
+          "lr": 0.001,
+          "weight_decay": 0.0001,
+          "warmup_epochs": 1,
+          "optimizer": "adamw",
+          "momentum": 0.9,
+          "num_workers": 2,
+          "data_dir": "assets",
+          "dataset": "cifar10",
+          "seed": 123
+        },
+        "final_train_acc": 0.6439859330484331,
+        "final_val_acc": 0.6352,
+        "test_acc": 0.6356,
+        "test_loss": 1.0100339853286744,
+        "total_time_sec": 88.31742854600003,
+        "mean_epoch_time": 17.66008815199998,
+        "params": 94986
+      },
+      {
+        "experiment_name": "cifar10_seed456",
+        "config": {
+          "epochs": 5,
+          "batch_size": 128,
+          "lr": 0.001,
+          "weight_decay": 0.0001,
+          "warmup_epochs": 1,
+          "optimizer": "adamw",
+          "momentum": 0.9,
+          "num_workers": 2,
+          "data_dir": "assets",
+          "dataset": "cifar10",
+          "seed": 456
+        },
+        "final_train_acc": 0.6469017094017094,
+        "final_val_acc": 0.647,
+        "test_acc": 0.6509,
+        "test_loss": 0.9901027593612671,
+        "total_time_sec": 88.34578515400005,
+        "mean_epoch_time": 17.665485706000005,
+        "params": 94986
+      },
+      {
+        "experiment_name": "cifar10_higher_lr",
+        "config": {
+          "epochs": 5,
+          "batch_size": 128,
+          "lr": 0.003,
+          "weight_decay": 0.0001,
+          "warmup_epochs": 1,
+          "optimizer": "adamw",
+          "momentum": 0.9,
+          "num_workers": 2,
+          "data_dir": "assets",
+          "dataset": "cifar10",
+          "seed": 42
+        },
+        "final_train_acc": 0.6860532407407407,
+        "final_val_acc": 0.6862,
+        "test_acc": 0.6851,
+        "test_loss": 0.8892112921714783,
+        "total_time_sec": 87.00991613999997,
+        "mean_epoch_time": 17.396781382200015,
+        "params": 94986
+      },
+      {
+        "experiment_name": "cifar10_sgd",
+        "config": {
+          "epochs": 5,
+          "batch_size": 128,
+          "lr": 0.01,
+          "weight_decay": 0.0001,
+          "warmup_epochs": 1,
+          "optimizer": "sgd",
+          "momentum": 0.9,
+          "num_workers": 2,
+          "data_dir": "assets",
+          "dataset": "cifar10",
+          "seed": 42
+        },
+        "final_train_acc": 0.6151842948717948,
+        "final_val_acc": 0.6204,
+        "test_acc": 0.6099,
+        "test_loss": 1.0888019525527954,
+        "total_time_sec": 86.20470487900002,
+        "mean_epoch_time": 17.236919611400026,
+        "params": 94986
+      }
+    ],
+    "fashion_mnist": [
+      {
+        "experiment_name": "fashion_mnist_seed42",
+        "config": {
+          "epochs": 5,
+          "batch_size": 128,
+          "lr": 0.001,
+          "weight_decay": 0.0001,
+          "warmup_epochs": 1,
+          "optimizer": "adamw",
+          "momentum": 0.9,
+          "num_workers": 2,
+          "data_dir": "assets",
+          "dataset": "fashion_mnist",
+          "seed": 42
+        },
+        "final_train_acc": 0.8615276128266033,
+        "final_val_acc": 0.869,
+        "test_acc": 0.8646,
+        "test_loss": 0.38152944087982177,
+        "total_time_sec": 94.45487589599998,
+        "mean_epoch_time": 18.887059532000034,
+        "params": 94410
+      },
+      {
+        "experiment_name": "fashion_mnist_seed123",
+        "config": {
+          "epochs": 5,
+          "batch_size": 128,
+          "lr": 0.001,
+          "weight_decay": 0.0001,
+          "warmup_epochs": 1,
+          "optimizer": "adamw",
+          "momentum": 0.9,
+          "num_workers": 2,
+          "data_dir": "assets",
+          "dataset": "fashion_mnist",
+          "seed": 123
+        },
+        "final_train_acc": 0.8596904691211401,
+        "final_val_acc": 0.8663333333333333,
+        "test_acc": 0.8578,
+        "test_loss": 0.4064070695877075,
+        "total_time_sec": 95.43605499699993,
+        "mean_epoch_time": 19.082382860800045,
+        "params": 94410
+      },
+      {
+        "experiment_name": "fashion_mnist_seed456",
+        "config": {
+          "epochs": 5,
+          "batch_size": 128,
+          "lr": 0.001,
+          "weight_decay": 0.0001,
+          "warmup_epochs": 1,
+          "optimizer": "adamw",
+          "momentum": 0.9,
+          "num_workers": 2,
+          "data_dir": "assets",
+          "dataset": "fashion_mnist",
+          "seed": 456
+        },
+        "final_train_acc": 0.8652204572446556,
+        "final_val_acc": 0.8758333333333334,
+        "test_acc": 0.8672,
+        "test_loss": 0.38169493227005,
+        "total_time_sec": 92.33738005900022,
+        "mean_epoch_time": 18.462953720799987,
+        "params": 94410
+      },
+      {
+        "experiment_name": "fashion_mnist_higher_lr",
+        "config": {
+          "epochs": 5,
+          "batch_size": 128,
+          "lr": 0.003,
+          "weight_decay": 0.0001,
+          "warmup_epochs": 1,
+          "optimizer": "adamw",
+          "momentum": 0.9,
+          "num_workers": 2,
+          "data_dir": "assets",
+          "dataset": "fashion_mnist",
+          "seed": 42
+        },
+        "final_train_acc": 0.8805671021377672,
+        "final_val_acc": 0.8901666666666667,
+        "test_acc": 0.8823,
+        "test_loss": 0.3338854474067688,
+        "total_time_sec": 95.42965599700005,
+        "mean_epoch_time": 19.08270089460002,
+        "params": 94410
+      },
+      {
+        "experiment_name": "fashion_mnist_sgd",
+        "config": {
+          "epochs": 5,
+          "batch_size": 128,
+          "lr": 0.01,
+          "weight_decay": 0.0001,
+          "warmup_epochs": 1,
+          "optimizer": "sgd",
+          "momentum": 0.9,
+          "num_workers": 2,
+          "data_dir": "assets",
+          "dataset": "fashion_mnist",
+          "seed": 42
+        },
+        "final_train_acc": 0.8428592636579573,
+        "final_val_acc": 0.853,
+        "test_acc": 0.8465,
+        "test_loss": 0.43547087116241456,
+        "total_time_sec": 95.97129694799992,
+        "mean_epoch_time": 19.19003559400003,
+        "params": 94410
+      }
+    ],
+    "cifar100": [
+      {
+        "experiment_name": "cifar100_seed42",
+        "config": {
+          "epochs": 5,
+          "batch_size": 128,
+          "lr": 0.001,
+          "weight_decay": 0.0001,
+          "warmup_epochs": 1,
+          "optimizer": "adamw",
+          "momentum": 0.9,
+          "num_workers": 2,
+          "data_dir": "assets",
+          "dataset": "cifar100",
+          "seed": 42
+        },
+        "final_train_acc": 0.3544337606837607,
+        "final_val_acc": 0.3478,
+        "test_acc": 0.35,
+        "test_loss": 2.5531271850585937,
+        "total_time_sec": 92.3471835209998,
+        "mean_epoch_time": 18.463580151799942,
+        "params": 397412
+      },
+      {
+        "experiment_name": "cifar100_seed123",
+        "config": {
+          "epochs": 5,
+          "batch_size": 128,
+          "lr": 0.001,
+          "weight_decay": 0.0001,
+          "warmup_epochs": 1,
+          "optimizer": "adamw",
+          "momentum": 0.9,
+          "num_workers": 2,
+          "data_dir": "assets",
+          "dataset": "cifar100",
+          "seed": 123
+        },
+        "final_train_acc": 0.35458956552706555,
+        "final_val_acc": 0.343,
+        "test_acc": 0.3506,
+        "test_loss": 2.5414375930786135,
+        "total_time_sec": 90.1572642640001,
+        "mean_epoch_time": 18.02789347619996,
+        "params": 397412
+      },
+      {
+        "experiment_name": "cifar100_seed456",
+        "config": {
+          "epochs": 5,
+          "batch_size": 128,
+          "lr": 0.001,
+          "weight_decay": 0.0001,
+          "warmup_epochs": 1,
+          "optimizer": "adamw",
+          "momentum": 0.9,
+          "num_workers": 2,
+          "data_dir": "assets",
+          "dataset": "cifar100",
+          "seed": 456
+        },
+        "final_train_acc": 0.35487891737891736,
+        "final_val_acc": 0.3326,
+        "test_acc": 0.3474,
+        "test_loss": 2.5759540195465087,
+        "total_time_sec": 89.21839033599986,
+        "mean_epoch_time": 17.8400283164,
+        "params": 397412
+      },
+      {
+        "experiment_name": "cifar100_higher_lr",
+        "config": {
+          "epochs": 5,
+          "batch_size": 128,
+          "lr": 0.003,
+          "weight_decay": 0.0001,
+          "warmup_epochs": 1,
+          "optimizer": "adamw",
+          "momentum": 0.9,
+          "num_workers": 2,
+          "data_dir": "assets",
+          "dataset": "cifar100",
+          "seed": 42
+        },
+        "final_train_acc": 0.40852029914529914,
+        "final_val_acc": 0.3908,
+        "test_acc": 0.3966,
+        "test_loss": 2.34994231338501,
+        "total_time_sec": 90.33080702999996,
+        "mean_epoch_time": 18.06014382419994,
+        "params": 397412
+      },
+      {
+        "experiment_name": "cifar100_sgd",
+        "config": {
+          "epochs": 5,
+          "batch_size": 128,
+          "lr": 0.01,
+          "weight_decay": 0.0001,
+          "warmup_epochs": 1,
+          "optimizer": "sgd",
+          "momentum": 0.9,
+          "num_workers": 2,
+          "data_dir": "assets",
+          "dataset": "cifar100",
+          "seed": 42
+        },
+        "final_train_acc": 0.26259793447293445,
+        "final_val_acc": 0.2504,
+        "test_acc": 0.2638,
+        "test_loss": 2.984505506896973,
+        "total_time_sec": 90.99900496200007,
+        "mean_epoch_time": 18.19605858879995,
+        "params": 397412
+      }
+    ]
+  },
+  "all_statistics": {
+    "cifar10": {
+      "baseline_val_mean": 0.6402666666666667,
+      "baseline_val_std": 0.00495939064357263,
+      "baseline_test_mean": 0.6413666666666668,
+      "baseline_test_std": 0.0067903526336184515
+    },
+    "fashion_mnist": {
+      "baseline_val_mean": 0.8703888888888889,
+      "baseline_val_std": 0.004000771530530876,
+      "baseline_test_mean": 0.8632,
+      "baseline_test_std": 0.003963163719387151
+    },
+    "cifar100": {
+      "baseline_val_mean": 0.34113333333333334,
+      "baseline_val_std": 0.006344201201797503,
+      "baseline_test_mean": 0.34933333333333333,
+      "baseline_test_std": 0.0013888444437333202
+    }
+  },
+  "timestamp": "2026-02-01 07:45:39"
+}
