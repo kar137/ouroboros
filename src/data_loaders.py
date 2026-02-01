@@ -1,7 +1,9 @@
 # Data loading utilities for CIFAR-10, CIFAR-100, and Fashion-MNIST.
 
+import json
 import random
-from typing import Optional, Tuple
+from pathlib import Path
+from typing import Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -55,6 +57,63 @@ def _build_fmnist_transforms(train: bool) -> transforms.Compose:
 
 
 # Internal helper to create train/val loaders.
+def _stratified_split_indices(
+    targets: Iterable[int],
+    val_fraction: float,
+    seed: int,
+) -> Tuple[List[int], List[int]]:
+
+    if not (0.0 < val_fraction < 1.0):
+        raise ValueError("val_fraction must be in (0, 1).")
+
+    rng = random.Random(seed)
+    per_class: Dict[int, List[int]] = {}
+    for idx, y in enumerate(targets):
+        per_class.setdefault(int(y), []).append(idx)
+
+    train_indices: List[int] = []
+    val_indices: List[int] = []
+    for _, indices in per_class.items():
+        rng.shuffle(indices)
+        val_count = max(1, int(round(len(indices) * val_fraction)))
+        val_indices.extend(indices[:val_count])
+        train_indices.extend(indices[val_count:])
+
+    rng.shuffle(train_indices)
+    rng.shuffle(val_indices)
+    return train_indices, val_indices
+
+
+def _load_or_create_split_indices(
+    dataset_name: str,
+    targets: Iterable[int],
+    val_fraction: float,
+    split_seed: int,
+    split_dir: Path,
+) -> Tuple[List[int], List[int]]:
+
+    split_dir.mkdir(parents=True, exist_ok=True)
+    tag = f"{dataset_name}_seed{split_seed}_val{val_fraction:.3f}".replace(".", "p")
+    split_path = split_dir / f"{tag}.json"
+
+    if split_path.exists():
+        with split_path.open("r", encoding="utf-8") as f:
+            payload = json.load(f)
+        return payload["train_indices"], payload["val_indices"]
+
+    train_indices, val_indices = _stratified_split_indices(targets, val_fraction, split_seed)
+    payload = {
+        "dataset": dataset_name,
+        "val_fraction": float(val_fraction),
+        "split_seed": int(split_seed),
+        "train_indices": train_indices,
+        "val_indices": val_indices,
+    }
+    with split_path.open("w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2)
+    return train_indices, val_indices
+
+
 def _make_loaders(
     dataset_cls,
     train_transform: transforms.Compose,
@@ -63,10 +122,32 @@ def _make_loaders(
     num_workers: int,
     data_dir: str,
     seed: Optional[int] = None,
+    val_fraction: float = 0.1,
+    split_seed: Optional[int] = None,
+    split_dir: Optional[str] = None,
 ) -> Tuple[DataLoader, DataLoader]:
     
-    train_set = dataset_cls(root=data_dir, train=True, transform=train_transform, download=True)
-    val_set = dataset_cls(root=data_dir, train=False, transform=val_transform, download=True)
+    train_base = dataset_cls(root=data_dir, train=True, transform=train_transform, download=True)
+    val_base = dataset_cls(root=data_dir, train=True, transform=val_transform, download=True)
+
+    dataset_name = dataset_cls.__name__
+    split_seed = int(split_seed if split_seed is not None else (seed if seed is not None else 42))
+    split_dir_path = Path(split_dir) if split_dir is not None else Path(data_dir) / "splits"
+
+    targets = getattr(train_base, "targets", None)
+    if targets is None:
+        raise ValueError("Dataset does not expose targets; cannot create stratified split.")
+
+    train_indices, val_indices = _load_or_create_split_indices(
+        dataset_name=dataset_name,
+        targets=targets,
+        val_fraction=val_fraction,
+        split_seed=split_seed,
+        split_dir=split_dir_path,
+    )
+
+    train_set = torch.utils.data.Subset(train_base, train_indices)
+    val_set = torch.utils.data.Subset(val_base, val_indices)
 
     generator = None
     worker_init_fn = None
@@ -110,11 +191,25 @@ def get_cifar10_loaders(
     num_workers: int,
     data_dir: str,
     seed: Optional[int] = None,
+    val_fraction: float = 0.1,
+    split_seed: Optional[int] = None,
+    split_dir: Optional[str] = None,
 ) -> Tuple[DataLoader, DataLoader]:
     
     train_tf = _build_cifar_transforms(train=True)
     val_tf = _build_cifar_transforms(train=False)
-    return _make_loaders(datasets.CIFAR10, train_tf, val_tf, batch_size, num_workers, data_dir, seed=seed)
+    return _make_loaders(
+        datasets.CIFAR10,
+        train_tf,
+        val_tf,
+        batch_size,
+        num_workers,
+        data_dir,
+        seed=seed,
+        val_fraction=val_fraction,
+        split_seed=split_seed,
+        split_dir=split_dir,
+    )
 
 # Create CIFAR-100 training and validation DataLoaders.
 def get_cifar100_loaders(
@@ -122,11 +217,25 @@ def get_cifar100_loaders(
     num_workers: int,
     data_dir: str,
     seed: Optional[int] = None,
+    val_fraction: float = 0.1,
+    split_seed: Optional[int] = None,
+    split_dir: Optional[str] = None,
 ) -> Tuple[DataLoader, DataLoader]:
    
     train_tf = _build_cifar_transforms(train=True)
     val_tf = _build_cifar_transforms(train=False)
-    return _make_loaders(datasets.CIFAR100, train_tf, val_tf, batch_size, num_workers, data_dir, seed=seed)
+    return _make_loaders(
+        datasets.CIFAR100,
+        train_tf,
+        val_tf,
+        batch_size,
+        num_workers,
+        data_dir,
+        seed=seed,
+        val_fraction=val_fraction,
+        split_seed=split_seed,
+        split_dir=split_dir,
+    )
 
 # Create Fashion-MNIST training and validation DataLoaders.
 def get_fashion_mnist_loaders(
@@ -134,11 +243,25 @@ def get_fashion_mnist_loaders(
     num_workers: int,
     data_dir: str,
     seed: Optional[int] = None,
+    val_fraction: float = 0.1,
+    split_seed: Optional[int] = None,
+    split_dir: Optional[str] = None,
 ) -> Tuple[DataLoader, DataLoader]:
     
     train_tf = _build_fmnist_transforms(train=True)
     val_tf = _build_fmnist_transforms(train=False)
-    return _make_loaders(datasets.FashionMNIST, train_tf, val_tf, batch_size, num_workers, data_dir, seed=seed)
+    return _make_loaders(
+        datasets.FashionMNIST,
+        train_tf,
+        val_tf,
+        batch_size,
+        num_workers,
+        data_dir,
+        seed=seed,
+        val_fraction=val_fraction,
+        split_seed=split_seed,
+        split_dir=split_dir,
+    )
 
 
 # ============================================================================
