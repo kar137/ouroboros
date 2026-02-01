@@ -1,8 +1,8 @@
-# Ouroboros -> Phase 1 Multi-Dataset CNN Baseline: Comprehensive Findings Report
+# Ouroboros -> Phase 1A Multi-Dataset CNN Baseline: Comprehensive Findings Report
 
 ## Abstract
 
-Phase 1 establishes a compact 3-layer CNN baseline across CIFAR-10, Fashion-MNIST, and CIFAR-100 using a consistent optimization stack (AdamW + warmup->cosine schedule, optional AMP, opportunistic torch.compile). The experiments demonstrate stable optimization over a 5-epoch budget: losses decrease monotonically, accuracies rise smoothly, and gradient norms remain finite with no parameters exhibiting exactly-zero gradients in recorded snapshots. Cross-dataset performance aligns with expected task difficulty: Fashion-MNIST converges rapidly to high accuracy (~86%), CIFAR-10 reaches a moderate baseline (~64%), and CIFAR-100 remains comparatively underfit (~35%) despite increased model capacity.
+Phase 1A establishes a compact 3-layer CNN baseline across CIFAR-10, Fashion-MNIST, and CIFAR-100 using a consistent optimization stack (AdamW + warmup->cosine schedule, optional AMP, opportunistic torch.compile). The experiments demonstrate stable optimization over a 5-epoch budget: losses decrease monotonically, accuracies rise smoothly, and gradient norms remain finite with no parameters exhibiting exactly-zero gradients in recorded snapshots. Cross-dataset performance aligns with expected task difficulty: Fashion-MNIST converges rapidly to high accuracy (~86%), CIFAR-10 reaches a moderate baseline (~64%), and CIFAR-100 remains comparatively underfit (~35%) despite increased model capacity.
 
 **Critical evaluation protocol correction:** Validation is now a stratified hold-out split drawn from the training set (train=True), while the official torchvision test split (train=False) is reserved for final reporting. The latest multi-dataset reproducibility run (results/phase1/phase1_all_datasets_results.json, 2026-02-01) reflects this fix: final validation and test accuracies are close but not numerically identical, consistent with distinct evaluation splits.
 
